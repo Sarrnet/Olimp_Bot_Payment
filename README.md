@@ -50,11 +50,12 @@ npm run build
 npm start
 ```
 
-Или через Docker:
+Или через Docker (на старом Docker Compose v1 — команда `docker-compose` через
+дефис; на новом v2 — `docker compose`):
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker-compose -p olimp_bot_payment up -d --build
 ```
 
 Подробности — в [DEPLOY.md](./DEPLOY.md).

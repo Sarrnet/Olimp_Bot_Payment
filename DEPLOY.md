@@ -39,16 +39,24 @@ Telegram Stars работают без токена провайдера.
 https://ВАШ_ДОМЕН/webhooks/cryptopay
 ```
 
-Express слушает порт `PORT` (по умолчанию 3000).
+Express слушает порт `PORT` (по умолчанию **3001**, чтобы не пересекаться с
+основным ботом на 3000).
 
 ## 5. Запуск через Docker Compose
 
+> **Про версию команды.** На старом Docker (Compose v1) команда пишется через
+> дефис — `docker-compose`; на новом (v2) — `docker compose`. Проверить: если
+> `docker compose version` выдаёт `unknown command`, у вас v1 — используйте
+> `docker-compose` во всех командах ниже.
+
 ```bash
-docker compose up --build -d
+docker-compose -p olimp_bot_payment up -d --build
 ```
 
-Compose поднимает бота, PostgreSQL и Redis. Миграции применяются автоматически
-через `start.sh` (`prisma migrate deploy`).
+Флаг `-p olimp_bot_payment` задаёт отдельное имя проекта, чтобы контейнеры не
+пересекались с основным ботом (`olimp_bot`). Compose поднимает бота, PostgreSQL
+и Redis. Миграции применяются автоматически через `start.sh`
+(`prisma migrate deploy`).
 
 ## 6. Запуск вручную
 
@@ -83,16 +91,19 @@ npm start
 
 ### Вариант A — Docker Compose (рекомендуется)
 
-Запускайте каждый бот как отдельный compose-проект. Тогда у каждого свои
-изолированные контейнеры Postgres и Redis, и конфликт по Redis-DB отпадает сам:
+Каждый бот — отдельный compose-проект. Тогда у каждого свои изолированные
+контейнеры Postgres и Redis, и конфликт по Redis-DB отпадает сам. Основной бот
+уже работает как проект `olimp_bot`, платёжный запускаем как `olimp_bot_payment`:
 
 ```bash
-docker compose -p olimp_main    up -d   # в папке основного бота
-docker compose -p olimp_payment up -d   # в папке платёжного бота
+# в папке платёжного бота (~/Olimp_Bot_Payment):
+docker-compose -p olimp_bot_payment up -d --build
 ```
 
 Наружу публикуются только разные host-порты: бот — `3001` (`HOST_PORT`),
-Postgres — `5434` (`DB_HOST_PORT`). При необходимости переопределите их в `.env`.
+Postgres — `5434` (`DB_HOST_PORT`) против `5433` у основного. При необходимости
+переопределите их в `.env`. (Для Compose v2 замените `docker-compose` на
+`docker compose`.)
 
 ### Вариант B — напрямую через Node (pm2/systemd)
 
