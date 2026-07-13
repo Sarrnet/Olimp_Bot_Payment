@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  telegramId          BigInt    @unique
+  username            String?
+  firstName           String?
+  lastName            String?
+  language            String?   @default("ru")
+  role                String    @default("USER") // "USER" or "ADMIN"
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Subscription / access state
+  paid                Boolean   @default(false)
+  paymentDate         DateTime?
+  subscriptionExpiry  DateTime?
+  lastPaymentProvider String?
+
+  // A/B testing group
+  abGroup             String    @default("A")
+
+  payments            Payment[]
+
+  @@index([telegramId])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+}
+
+enum PaymentProviderType {
+  CRYPTO_PAY
+  TELEGRAM_STARS
+  YOOKASSA
+  PAYCOM_UZ
+  BEPAID_BY
+  ROBOKASSA_KZ
+  PORTMONE_UA
+  UNLIMIT
+}
+
+model Payment {
+  id                String              @id @default(uuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          PaymentProviderType
+  providerInvoiceId String              @unique
+  amount            Int // In minor units
+  currency          String
+  status            PaymentStatus       @default(PENDING)
+  payload           Json? // Store type, days, etc.
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  paidAt            DateTime?
+
+  @@index([userId])
+  @@index([providerInvoiceId])
+}
+
+model AbConfig {
+  id   String @id @default(uuid())
+  name String @unique
+
+  // 1 Month Tariff
+  price       Int @default(1999) // RUB
+  oldPrice    Int @default(2999) // RUB (struck-through), shown only if > price
+  priceCrypto Int @default(26) // USDT (fixed)
+
+  // 3 Months Tariff
+  price3       Int @default(2999) // RUB
+  oldPrice3    Int @default(4499) // RUB
+  price3Crypto Int @default(39) // USDT
+
+  // 6 Months Tariff
+  price6       Int @default(3499) // RUB
+  oldPrice6    Int @default(5999) // RUB
+  price6Crypto Int @default(45) // USDT
+
+  // Telegram Stars Pricing (XTR)
+  priceStars  Int @default(2000)
+  price3Stars Int @default(3000)
+  price6Stars Int @default(3500)
+
+  isActive  Boolean  @default(true)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
