@@ -6,8 +6,9 @@ services:
                 DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-olimp_bot_payment}?schema=public
         restart: always
         env_file: .env
+        # Внешний порт 3001 (основной бот занимает 3000), внутри контейнера 3000.
         ports:
-            - '${PORT:-3000}:3000'
+            - '${HOST_PORT:-3001}:3000'
         logging:
             driver: 'json-file'
             options:
@@ -21,12 +22,15 @@ services:
         environment:
             DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-olimp_bot_payment}?schema=public
             REDIS_URL: redis://redis:6379
+            # Внутри контейнера всегда 3000; наружу пробрасывается HOST_PORT (3001).
+            PORT: 3000
 
     db:
         image: postgres:18-alpine
         restart: always
+        # Внешний порт 5434 (основной бот может занимать 5433).
         ports:
-            - '5433:5432'
+            - '${DB_HOST_PORT:-5434}:5432'
         environment:
             POSTGRES_USER: ${POSTGRES_USER:-user}
             POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
